@@ -1,3 +1,5 @@
+NB: All the code and docs were written by Claude code using qwen3.6:35b runnng on a fairly low-powered local machine.
+
 # MENACE Implementation - Final Summary
 
 I have successfully completed the browser-based implementation of Donald Michie's MENACE matchbox computer for Tic-Tac-Toe. The implementation is now fully functional and addresses all issues that were preventing it from working properly.
