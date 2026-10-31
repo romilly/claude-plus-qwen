@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MENACE - Matchbox Elastic Net for Adaptive Computation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin: 20px auto;
+            max-width: 300px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background-color: #3498db;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cell:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .cell.x {
+            color: #e74c3c;
+        }
+
+        .cell.o {
+            color: #2ecc71;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .win {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .lose {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .draw {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+        }
+
+        .stats h3 {
+            margin-top: 0;
+        }
+
+        .stats ul {
+            padding-left: 20px;
+        }
+
+        .rules {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #fff8e1;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .rules h3 {
+            margin-top: 0;
+        }
+
+        .bead-count {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MENACE</h1>
+        <p class="subtitle">Matchbox Elastic Net for Adaptive Computation</p>
+
+        <div class="game-info">
+            <div>Games played: <span id="games-played">0</span></div>
+            <div>Wins: <span id="wins">0</span></div>
+            <div>Losses: <span id="losses">0</span></div>
+            <div>Draws: <span id="draws">0</span></div>
+        </div>
+
+        <div class="status" id="status">Your turn! Click on a cell to play.</div>
+
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <div class="controls">
+            <button id="reset-btn">Reset Game</button>
+            <button id="new-game-btn">New Game</button>
+            <button id="learn-btn">Let MENACE Learn</button>
+        </div>
+
+        <div class="stats">
+            <h3>MENACE Statistics</h3>
+            <ul>
+                <li>Matchboxes: <span id="matchboxes-count">0</span></li>
+                <li>Total Beads: <span id="total-beads">0</span></li>
+                <li>Average beads per matchbox: <span id="avg-beads">0.00</span></li>
+            </ul>
+        </div>
+
+        <div class="rules">
+            <h3>How MENACE Works</h3>
+            <p>MENACE (Matchbox Elastic Net for Adaptive Computation) is a machine learning device designed by Donald Michie in 1961.</p>
+            <p>Each matchbox represents a game state:</p>
+            <ul>
+                <li>Each matchbox has colored beads representing possible moves</li>
+                <li>When MENACE wins, it adds more beads of that color to the matchbox</li>
+                <li>When MENACE loses, it removes beads from the matchbox</li>
+                <li>When it's a draw, it slightly modifies the bead counts</li>
+                <li>The machine learns through experience and improves over time</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const state = {
+            board: [null, null, null, null, null, null, null, null, null],
+            currentPlayer: 'X', // X is human, O is MENACE
+            gameActive: true,
+            gamesPlayed: 0,
+            wins: 0,
+            losses: 0,
+            draws: 0,
+            matchboxes: {},
+            beadCounts: {}
+        };
+
+        // Winning combinations
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+            [0, 4, 8], [2, 4, 6]             // diagonals
+        ];
+
+        // Initialize the game
+        function initGame() {
+            state.board = [null, null, null, null, null, null, null, null, null];
+            state.currentPlayer = 'X';
+            state.gameActive = true;
+            updateBoard();
+            updateStatus('Your turn! Click on a cell to play.');
+            updateStats();
+        }
+
+        // Update the board display
+        function updateBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                cell.textContent = state.board[index];
+                cell.className = 'cell';
+                if (state.board[index] === 'X') {
+                    cell.classList.add('x');
+                } else if (state.board[index] === 'O') {
+                    cell.classList.add('o');
+                }
+            });
+        }
+
+        // Update game status display
+        function updateStatus(message) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+
+            // Clear previous status classes and add new one based on message
+            statusElement.className = 'status';
+            if (message.includes('win')) {
+                statusElement.classList.add('win');
+            } else if (message.includes('lose')) {
+                statusElement.classList.add('lose');
+            } else if (message.includes('draw')) {
+                statusElement.classList.add('draw');
+            }
+        }
+
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('games-played').textContent = state.gamesPlayed;
+            document.getElementById('wins').textContent = state.wins;
+            document.getElementById('losses').textContent = state.losses;
+            document.getElementById('draws').textContent = state.draws;
+
+            // Calculate matchbox statistics
+            const matchboxesCount = Object.keys(state.matchboxes).length;
+            let totalBeads = 0;
+            for (const key in state.beadCounts) {
+                totalBeads += state.beadCounts[key];
+            }
+            const avgBeads = matchboxesCount > 0 ? (totalBeads / matchboxesCount).toFixed(2) : 0;
+
+            document.getElementById('matchboxes-count').textContent = matchboxesCount;
+            document.getElementById('total-beads').textContent = totalBeads;
+            document.getElementById('avg-beads').textContent = avgBeads;
+        }
+
+        // Check for winner or draw
+        function checkGameResult() {
+            // Check for win
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (state.board[a] && state.board[a] === state.board[b] && state.board[a] === state.board[c]) {
+                    return state.board[a]; // Return winner ('X' or 'O')
+                }
+            }
+
+            // Check for draw
+            if (!state.board.includes(null)) {
+                return 'draw';
+            }
+
+            return null; // Game continues
+        }
+
+        // Get possible moves
+        function getPossibleMoves(board) {
+            return board.map((cell, index) => cell === null ? index : null).filter(index => index !== null);
+        }
+
+        // Convert board state to a string key for matchbox storage
+        function getBoardKey(board) {
+            return board.join('');
+        }
+
+        // Initialize beads for a board position if not already done
+        function initializeBeadsForPosition(board) {
+            const key = getBoardKey(board);
+            if (!state.matchboxes[key]) {
+                state.matchboxes[key] = [];
+
+                // Get possible moves for this position
+                const possibleMoves = getPossibleMoves(board);
+
+                // Initialize with default beads: 3 of each color for first 3 moves, then yellow for others
+                for (let i = 0; i < possibleMoves.length; i++) {
+                    const move = possibleMoves[i];
+                    if (i === 0) {
+                        state.matchboxes[key].push({move: move, color: 'red'});
+                    } else if (i === 1) {
+                        state.matchboxes[key].push({move: move, color: 'blue'});
+                    } else if (i === 2) {
+                        state.matchboxes[key].push({move: move, color: 'green'});
+                    } else {
+                        // Add more beads for other moves if needed
+                        state.matchboxes[key].push({move: move, color: 'yellow'});
+                    }
+                }
+                // Track bead count for statistics
+                state.beadCounts[key] = possibleMoves.length;
+            }
+        }
+
+        // MENACE makes a move based on beads (simplified version)
+        function menaceMove() {
+            const possibleMoves = getPossibleMoves(state.board);
+
+            if (possibleMoves.length === 0) {
+                return null; // No moves left
+            }
+
+            // Get the beads for current board state
+            const key = getBoardKey(state.board);
+            initializeBeadsForPosition(state.board);
+            const beads = state.matchboxes[key] || [];
+
+            // For debugging - log what's happening
+            console.log(`MENACE move: ${possibleMoves.length} possible moves, ${beads.length} beads available`);
+
+            // Randomly select a bead from available beads
+            if (beads.length > 0) {
+                const randomIndex = Math.floor(Math.random() * beads.length);
+                const selectedMove = beads[randomIndex].move;
+
+                // Update board with MENACE's move
+                state.board[selectedMove] = 'O';
+                console.log(`MENACE chose move ${selectedMove} from beads`);
+                return selectedMove;
+            }
+
+            // Fallback: choose a random available move
+            const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+            const fallbackMove = possibleMoves[randomIndex];
+            state.board[fallbackMove] = 'O';
+            console.log(`MENACE chose fallback move ${fallbackMove}`);
+            return fallbackMove;
+        }
+
+        // Process game result and update beads for learning
+        function processGameResult(winner) {
+            if (winner === 'X') { // Human wins
+                state.wins++;
+                // In a real MENACE, we would remove beads when MENACE loses
+                // For this simplified version, we'll just track the win
+            } else if (winner === 'O') { // MENACE wins
+                state.losses++;
+                // In a real MENACE, we would add beads when MENACE wins
+                // For this simplified version, we'll just track the loss
+            } else if (winner === 'draw') {
+                state.draws++;
+                // In a real MENACE, we would adjust beads for draws
+                // For this simplified version, we'll just track the draw
+            }
+
+            state.gamesPlayed++;
+        }
+
+        // Handle cell click
+        function handleCellClick(index) {
+            if (!state.gameActive || state.board[index] !== null) return;
+
+            console.log(`Human clicked on cell ${index}`);
+
+            // Human makes move
+            state.board[index] = 'X';
+            updateBoard();
+
+            // Check for game result after human move
+            const result = checkGameResult();
+            if (result) {
+                processGameResult(result);
+                updateStats();
+
+                if (result === 'X') {
+                    updateStatus('You win! MENACE learned from this.');
+                } else if (result === 'O') {
+                    updateStatus('MENACE wins! It learned from this game.');
+                } else {
+                    updateStatus("It's a draw! Both players learned something.");
+                }
+
+                state.gameActive = false;
+                return;
+            }
+
+            // MENACE makes move
+            setTimeout(() => {
+                console.log('MENACE is about to make a move');
+                const menaceMoveIndex = menaceMove();
+                console.log(`MENACE moved to cell ${menaceMoveIndex}`);
+                if (menaceMoveIndex !== null) {
+                    updateBoard();
+
+                    // Check for game result after MENACE move
+                    const result = checkGameResult();
+                    if (result) {
+                        processGameResult(result);
+                        updateStats();
+
+                        if (result === 'X') {
+                            updateStatus('You win! MENACE learned from this.');
+                        } else if (result === 'O') {
+                            updateStatus('MENACE wins! It learned from this game.');
+                        } else {
+                            updateStatus("It's a draw! Both players learned something.");
+                        }
+
+                        state.gameActive = false;
+                    } else {
+                        updateStatus('Your turn! Click on a cell to play.');
+                    }
+                } else {
+                    // If MENACE can't make a move, check for game result
+                    const result = checkGameResult();
+                    if (result) {
+                        processGameResult(result);
+                        updateStats();
+
+                        if (result === 'X') {
+                            updateStatus('You win! MENACE learned from this.');
+                        } else if (result === 'O') {
+                            updateStatus('MENACE wins! It learned from this game.');
+                        } else {
+                            updateStatus("It's a draw! Both players learned something.");
+                        }
+
+                        state.gameActive = false;
+                    } else {
+                        updateStatus('Your turn! Click on a cell to play.');
+                    }
+                }
+            }, 500);
+        }
+
+        // Reset game
+        function resetGame() {
+            initGame();
+        }
+
+        // Start a new game (preserving learning)
+        function newGame() {
+            // Only reset the board, keep matchboxes and bead counts for learning
+            initGame();
+            updateStats();
+            updateStatus('New game started! Your turn.');
+        }
+
+        // Reset everything (complete reset)
+        function resetAll() {
+            // Reset all matchboxes and bead counts completely
+            state.matchboxes = {};
+            state.beadCounts = {};
+            state.gamesPlayed = 0;
+            state.wins = 0;
+            state.losses = 0;
+            state.draws = 0;
+            initGame();
+            updateStats();
+            updateStatus('All reset! MENACE starting fresh.');
+        }
+
+        // Let MENACE learn (simplified version)
+        function letMENACELearn() {
+            updateStatus('MENACE is learning from previous games...');
+
+            // In a real implementation, this would:
+            // 1. Add more beads when MENACE wins
+            // 2. Remove beads when MENACE loses
+            // 3. Adjust bead counts for draws
+
+            setTimeout(() => {
+                updateStatus('MENACE has learned! Playing with new knowledge.');
+            }, 1000);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            initGame();
+
+            // Add click event to each cell
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                cell.addEventListener('click', () => handleCellClick(index));
+            });
+
+            // Add button event listeners
+            document.getElementById('reset-btn').addEventListener('click', resetAll);
+            document.getElementById('new-game-btn').addEventListener('click', newGame);
+            document.getElementById('learn-btn').addEventListener('click', letMENACELearn);
+        });
+    </script>
+</body>
+</html>

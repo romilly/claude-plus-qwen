@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .status {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s;
+        }
+
+        .cell:hover {
+            background-color: #e0e0e0;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .winning-cell {
+            background-color: #a8e6cf;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+
+    <div class="game-container">
+        <div class="status" id="status">Player X's turn</div>
+
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <div class="controls">
+            <button id="restart">Restart Game</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        // Winning combinations
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+            [0, 4, 8], [2, 4, 6]             // diagonals
+        ];
+
+        // DOM elements
+        const statusDisplay = document.getElementById('status');
+        const cells = document.querySelectorAll('.cell');
+        const restartButton = document.getElementById('restart');
+
+        // Messages
+        const winMessage = () => `Player ${currentPlayer} wins!`;
+        const drawMessage = () => `Game ended in a draw!`;
+        const currentPlayerTurn = () => `Player ${currentPlayer}'s turn`;
+
+        // Initialize game
+        statusDisplay.innerHTML = currentPlayerTurn();
+
+        // Handle cell click
+        function handleCellClick(e) {
+            const cell = e.target;
+            const index = parseInt(cell.getAttribute('data-index'));
+
+            // Check if cell is already played or game is inactive
+            if (gameBoard[index] !== '' || !gameActive) {
+                return;
+            }
+
+            // Update game state
+            gameBoard[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+
+            // Check for win or draw
+            if (checkWin()) {
+                statusDisplay.innerHTML = winMessage();
+                gameActive = false;
+                highlightWinningCells();
+                return;
+            }
+
+            if (checkDraw()) {
+                statusDisplay.innerHTML = drawMessage();
+                gameActive = false;
+                return;
+            }
+
+            // Switch player
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusDisplay.innerHTML = currentPlayerTurn();
+        }
+
+        // Check for win
+        function checkWin() {
+            return winPatterns.some(pattern => {
+                const [a, b, c] = pattern;
+                return gameBoard[a] !== '' &&
+                       gameBoard[a] === gameBoard[b] &&
+                       gameBoard[a] === gameBoard[c];
+            });
+        }
+
+        // Check for draw
+        function checkDraw() {
+            return !gameBoard.includes('');
+        }
+
+        // Highlight winning cells
+        function highlightWinningCells() {
+            winPatterns.forEach(pattern => {
+                const [a, b, c] = pattern;
+                if (gameBoard[a] !== '' &&
+                    gameBoard[a] === gameBoard[b] &&
+                    gameBoard[a] === gameBoard[c]) {
+                    cells[a].classList.add('winning-cell');
+                    cells[b].classList.add('winning-cell');
+                    cells[c].classList.add('winning-cell');
+                }
+            });
+        }
+
+        // Restart game
+        function restartGame() {
+            currentPlayer = 'X';
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            statusDisplay.innerHTML = currentPlayerTurn();
+
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('winning-cell');
+            });
+        }
+
+        // Event listeners
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        restartButton.addEventListener('click', restartGame);
+    </script>
+</body>
+</html>
