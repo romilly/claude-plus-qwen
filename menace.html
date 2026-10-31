@@ -163,8 +163,8 @@
 
         <div class="game-info">
             <div>Games played: <span id="games-played">0</span></div>
-            <div>Wins: <span id="wins">0</span></div>
-            <div>Losses: <span id="losses">0</span></div>
+            <div>MENACE wins: <span id="wins">0</span></div>
+            <div>MENACE losses: <span id="losses">0</span></div>
             <div>Draws: <span id="draws">0</span></div>
         </div>
 
@@ -185,7 +185,7 @@
         <div class="controls">
             <button id="reset-btn">Reset Game</button>
             <button id="new-game-btn">New Game</button>
-            <button id="learn-btn">Let MENACE Learn</button>
+            <span style="color: #7f8c8d; font-size: 14px;">MENACE learns automatically after every game — wins reinforce beads, losses remove them.</span>
         </div>
 
         <div class="stats">
@@ -237,6 +237,7 @@
             state.board = [null, null, null, null, null, null, null, null, null];
             state.currentPlayer = 'X';
             state.gameActive = true;
+            menacePath.length = 0; // clear path from any previous game
             updateBoard();
             updateStatus('Your turn! Click on a cell to play.');
             updateStats();
@@ -290,6 +291,24 @@
             document.getElementById('matchboxes-count').textContent = matchboxesCount;
             document.getElementById('total-beads').textContent = totalBeads;
             document.getElementById('avg-beads').textContent = avgBeads;
+
+            // Win rate for MENACE (O)
+            const total = state.wins + state.losses + state.draws;
+            if (total > 0) {
+                const winRate = ((state.wins / total) * 100).toFixed(1);
+                let statusEl = document.getElementById('status');
+                if (!document.querySelector('.win-rate')) {
+                    statusEl.innerHTML = statusEl.textContent;
+                    const rateSpan = document.createElement('span');
+                    rateSpan.className = 'win-rate';
+                    rateSpan.style.fontSize = '0.75em';
+                    rateSpan.style.opacity = '0.7';
+                    rateSpan.textContent = ` (MENACE win rate: ${winRate}%)`;
+                    statusEl.appendChild(rateSpan);
+                } else {
+                    document.querySelector('.win-rate').textContent = ` (MENACE win rate: ${winRate}%)`;
+                }
+            }
         }
 
         // Check for winner or draw
@@ -369,6 +388,9 @@
                 const randomIndex = Math.floor(Math.random() * beads.length);
                 const selectedMove = beads[randomIndex].move;
 
+                // Record before modifying the board
+                recordMenaceMove(state.board, selectedMove);
+
                 // Update board with MENACE's move
                 state.board[selectedMove] = 'O';
                 console.log(`MENACE chose move ${selectedMove} from beads`);
@@ -378,6 +400,10 @@
             // Fallback: choose a random available move
             const randomIndex = Math.floor(Math.random() * possibleMoves.length);
             const fallbackMove = possibleMoves[randomIndex];
+
+            // Record before modifying the board
+            recordMenaceMove(state.board, fallbackMove);
+
             state.board[fallbackMove] = 'O';
             console.log(`MENACE chose fallback move ${fallbackMove}`);
             return fallbackMove;
@@ -385,21 +411,88 @@
 
         // Process game result and update beads for learning
         function processGameResult(winner) {
-            if (winner === 'X') { // Human wins
-                state.wins++;
-                // In a real MENACE, we would remove beads when MENACE loses
-                // For this simplified version, we'll just track the win
-            } else if (winner === 'O') { // MENACE wins
+            if (winner === 'X') { // Human wins → MENACE lost
                 state.losses++;
-                // In a real MENACE, we would add beads when MENACE wins
-                // For this simplified version, we'll just track the loss
+                // Remove one bead from each matchbox MENACE visited during this game
+                removeBeadsFromPath();
+            } else if (winner === 'O') { // MENACE wins
+                state.wins++;
+                // Add beads back to the matchboxes along the winning path
+                addBeadsToPath();
             } else if (winner === 'draw') {
                 state.draws++;
-                // In a real MENACE, we would adjust beads for draws
-                // For this simplified version, we'll just track the draw
+                // Small adjustment: add a bead for moves that were made, remove one for moves not taken
+                adjustBeadsOnDraw();
             }
 
             state.gamesPlayed++;
+        }
+
+        // Track the path MENACE took during this game
+        const menacePath = [];
+
+        function recordMenaceMove(boardBeforeMove, move) {
+            menacePath.push({
+                board: getBoardKey(boardBeforeMove),
+                move: move
+            });
+        }
+
+        // Remove one bead from each matchbox on the MENACE path when it loses
+        function removeBeadsFromPath() {
+            for (const entry of menacePath) {
+                const key = entry.board;
+                const beads = state.matchboxes[key];
+                if (beads && beads.length > 0) {
+                    // Remove one random bead (not all — MENACE always keeps options)
+                    const idx = Math.floor(Math.random() * beads.length);
+                    beads.splice(idx, 1);
+                    state.beadCounts[key] = beads.length;
+                }
+            }
+            menacePath.length = 0; // clear the path
+        }
+
+        // Add a new bead of a winning color to each matchbox on the MENACE path when it wins
+        function addBeadsToPath() {
+            const colors = ['red', 'blue', 'green', 'yellow'];
+            for (const entry of menacePath) {
+                const key = entry.board;
+                if (!state.matchboxes[key]) {
+                    state.matchboxes[key] = [];
+                }
+                // Add a new bead with the same move and a random winning color
+                state.matchboxes[key].push({
+                    move: entry.move,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+                state.beadCounts[key] = state.matchboxes[key].length;
+            }
+            menacePath.length = 0; // clear the path
+        }
+
+        // Adjust bead counts on draw — reinforce moves made, slightly penalize unmade moves
+        function adjustBeadsOnDraw() {
+            const colors = ['red', 'blue', 'green'];
+            for (const entry of menacePath) {
+                const key = entry.board;
+                if (!state.matchboxes[key]) {
+                    state.matchboxes[key] = [];
+                }
+                // Add a bead reinforcing the move that was made
+                state.matchboxes[key].push({
+                    move: entry.move,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+                // Slightly reduce beads for unmade moves (remove one random non-matching bead)
+                const otherBeads = state.matchboxes[key].filter(b => b.move !== entry.move);
+                if (otherBeads.length > 0) {
+                    const idx = Math.floor(Math.random() * state.matchboxes[key].length);
+                    state.matchboxes[key].splice(idx, 1);
+                }
+                state.beadCounts[key] = state.matchboxes[key].length;
+            }
+            menacePath.length = 0; // clear the path
         }
 
         // Handle cell click
@@ -506,19 +599,6 @@
             updateStatus('All reset! MENACE starting fresh.');
         }
 
-        // Let MENACE learn (simplified version)
-        function letMENACELearn() {
-            updateStatus('MENACE is learning from previous games...');
-
-            // In a real implementation, this would:
-            // 1. Add more beads when MENACE wins
-            // 2. Remove beads when MENACE loses
-            // 3. Adjust bead counts for draws
-
-            setTimeout(() => {
-                updateStatus('MENACE has learned! Playing with new knowledge.');
-            }, 1000);
-        }
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
@@ -533,7 +613,6 @@
             // Add button event listeners
             document.getElementById('reset-btn').addEventListener('click', resetAll);
             document.getElementById('new-game-btn').addEventListener('click', newGame);
-            document.getElementById('learn-btn').addEventListener('click', letMENACELearn);
         });
     </script>
 </body>
