@@ -43,6 +43,7 @@ The implementation now correctly simulates the core MENACE algorithm where:
 4. `IMPLEMENTATION-COMPLETED.md` - Final completion summary
 5. `menace-test.js` - Test script for verification
 6. `SOLUTION-VERIFICATION.md` - Final verification document
+7. `VALIDATION.html` - Validation documentation
 
 ## Verification Status
 
